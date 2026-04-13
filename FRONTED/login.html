@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BankLedger — Secure Banking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            primary: { DEFAULT: '#1d4ed8', hover: '#1e40af', light: '#eff6ff' },
+          },
+          keyframes: {
+            fadeIn: { '0%': { opacity: 0, transform: 'translateY(12px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+            shake: { '0%,100%': { transform: 'translateX(0)' }, '20%,60%': { transform: 'translateX(-6px)' }, '40%,80%': { transform: 'translateX(6px)' } },
+          },
+          animation: {
+            fadeIn: 'fadeIn 0.35s ease forwards',
+            shake: 'shake 0.4s ease',
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .form-panel { display: none; }
+    .form-panel.active { display: block; animation: fadeIn 0.35s ease forwards; }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes shake  { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+  </style>
+</head>
+<body class="bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#0a233a] via-[#051320] to-[#020813] text-white min-h-screen overflow-x-hidden bg-fixed bg-cover bg-no-repeat flex items-center justify-center p-4">
+
+  <div class="w-full max-w-md">
+
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 shadow-lg mb-4">
+        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 10v11M12 10v11M16 10v11"/>
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold text-white tracking-tight">BankLedger</h1>
+      <p class="text-slate-400 text-sm mt-1">Secure • Simple • Reliable</p>
+    </div>
+
+    <div class="bg-[#01040a]/40 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-cyan-900/20 p-8">
+
+      <div class="flex bg-white/5 rounded-2xl p-1 mb-8" role="tablist" aria-label="Auth mode">
+        <button id="tab-login" role="tab" aria-selected="true" aria-controls="panel-login"
+          onclick="switchTab('login')"
+          class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 bg-cyan-600 text-white shadow">
+          Login
+        </button>
+        <button id="tab-register" role="tab" aria-selected="false" aria-controls="panel-register"
+          onclick="switchTab('register')"
+          class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 text-slate-400 hover:text-white">
+          Register
+        </button>
+      </div>
+
+      <div id="notification" role="alert" aria-live="polite"
+        class="hidden mb-5 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2">
+        <svg id="notif-icon" class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"></svg>
+        <span id="notif-text"></span>
+      </div>
+
+      <div id="panel-login" class="form-panel active" role="tabpanel" aria-labelledby="tab-login">
+        <form id="login-form" novalidate>
+          <div class="space-y-5">
+
+            <div>
+              <label for="login-email" class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Email</label>
+              <input id="login-email" type="email" autocomplete="email" required placeholder="you@example.com"
+                class="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition" />
+            </div>
+
+            <div>
+              <label for="login-password" class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Password</label>
+              <div class="relative">
+                <input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••"
+                  class="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 pr-10 text-sm
+                         focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition" />
+                <button type="button" onclick="togglePassword('login-password', this)"
+                  class="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-300 transition" tabindex="-1" aria-label="Toggle password visibility">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" id="login-btn"
+              class="w-full bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white font-bold py-3 rounded-xl
+                     transition-all duration-200 flex items-center justify-center gap-2 mt-2
+                     shadow-[0_0_15px_rgba(8,145,178,0.4)] hover:shadow-[0_0_25px_rgba(8,145,178,0.6)]">
+              <span>Sign In</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+              </svg>
+            </button>
+
+          </div>
+        </form>
+
+        <p class="text-center text-slate-500 text-xs mt-6">
+          Don't have an account?
+          <button onclick="switchTab('register')" class="text-cyan-400 hover:text-cyan-300 font-medium transition">Register here</button>
+        </p>
+      </div><div id="panel-register" class="form-panel" role="tabpanel" aria-labelledby="tab-register">
+        <form id="register-form" novalidate>
+          <div class="space-y-5">
+
+            <div>
+              <label for="reg-name" class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Full Name</label>
+              <input id="reg-name" type="text" autocomplete="name" required placeholder="John Doe"
+                class="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition" />
+            </div>
+
+            <div>
+              <label for="reg-email" class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Email</label>
+              <input id="reg-email" type="email" autocomplete="email" required placeholder="you@example.com"
+                class="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm
+                       focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition" />
+            </div>
+
+            <div>
+              <label for="reg-password" class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Password</label>
+              <div class="relative">
+                <input id="reg-password" type="password" autocomplete="new-password" required placeholder="Min. 8 characters"
+                  class="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 pr-10 text-sm
+                         focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition" />
+                <button type="button" onclick="togglePassword('reg-password', this)"
+                  class="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-300 transition" tabindex="-1" aria-label="Toggle password visibility">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label for="reg-pin" class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                  Create Security PIN (4 or 6 digits)
+              </label>
+              <div class="relative">
+                  <span class="absolute inset-y-0 left-4 flex items-center text-slate-500">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                  </span>
+                  <input id="reg-pin" type="text" inputmode="numeric" maxlength="6" pattern="^\d{4}$|^\d{6}$" required placeholder="••••" autocomplete="off" style="-webkit-text-security: disc;"
+                      class="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl pl-10 pr-4 py-3 text-lg tracking-[0.5em] font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition" />
+              </div>
+              <p class="text-xs text-slate-500 mt-1.5">You will use this to authorize transfers.</p>
+            </div>
+
+            <button type="submit" id="register-btn"
+              class="w-full bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white font-bold py-3 rounded-xl
+                     transition-all duration-200 flex items-center justify-center gap-2 mt-2
+                     shadow-[0_0_15px_rgba(8,145,178,0.4)] hover:shadow-[0_0_25px_rgba(8,145,178,0.6)]">
+              <span>Create Account</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+              </svg>
+            </button>
+
+          </div>
+        </form>
+
+        <p class="text-center text-slate-500 text-xs mt-6">
+          Already have an account?
+          <button onclick="switchTab('login')" class="text-cyan-400 hover:text-cyan-300 font-medium transition">Sign in here</button>
+        </p>
+      </div></div><p class="text-center text-slate-600 text-xs mt-6">© 2026 BankLedger · All rights reserved</p>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000/api';
+
+    // ─── Tab Switcher ────────────────────────────────────────────
+    function switchTab(tab) {
+      const panels = ['login', 'register'];
+      panels.forEach(t => {
+        const panel = document.getElementById(`panel-${t}`);
+        const tabBtn = document.getElementById(`tab-${t}`);
+        const isActive = t === tab;
+
+        panel.classList.toggle('active', isActive);
+        tabBtn.setAttribute('aria-selected', isActive);
+
+        if (isActive) {
+          tabBtn.classList.add('bg-cyan-600', 'text-white', 'shadow');
+          tabBtn.classList.remove('text-slate-400', 'hover:text-white');
+        } else {
+          tabBtn.classList.remove('bg-cyan-600', 'text-white', 'shadow');
+          tabBtn.classList.add('text-slate-400', 'hover:text-white');
+        }
+      });
+      hideNotification();
+    }
+
+    // ─── Notification Banner ─────────────────────────────────────
+    const ICONS = {
+      success: `<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>`,
+      error:   `<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>`,
+    };
+
+    function showNotification(message, type = 'error') {
+      const el    = document.getElementById('notification');
+      const icon  = document.getElementById('notif-icon');
+      const text  = document.getElementById('notif-text');
+
+      text.textContent = message;
+      icon.innerHTML   = ICONS[type] ?? ICONS.error;
+
+      el.className = [
+        'mb-5 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2',
+        type === 'success'
+          ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+          : 'bg-red-500/15 border border-red-500/30 text-red-400',
+      ].join(' ');
+
+      // shake on error
+      if (type === 'error') {
+        el.style.animation = 'none';
+        el.offsetHeight; // reflow
+        el.style.animation = 'shake 0.4s ease';
+      }
+
+      el.classList.remove('hidden');
+    }
+
+    function hideNotification() {
+      document.getElementById('notification').classList.add('hidden');
+    }
+
+    // ─── Button loading state ────────────────────────────────────
+    function setLoading(btn, loading) {
+      btn.disabled = loading;
+      btn.querySelector('span').textContent = loading
+        ? (btn.id === 'login-btn' ? 'Signing in…' : 'Creating account…')
+        : (btn.id === 'login-btn' ? 'Sign In'      : 'Create Account');
+      btn.classList.toggle('opacity-70', loading);
+      btn.classList.toggle('cursor-not-allowed', loading);
+    }
+
+    // ─── Toggle Password Visibility ──────────────────────────────
+    function togglePassword(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const show  = input.type === 'password';
+      input.type  = show ? 'text' : 'password';
+      btn.querySelector('svg').innerHTML = show
+        ? `<path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>`
+        : `<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+    }
+
+    // ─── Generic API helper ──────────────────────────────────────
+    async function apiPost(endpoint, payload) {
+      const res  = await fetch(`${API_BASE}${endpoint}`, {
+        method:      'POST',
+        credentials: 'include',
+        headers:     { 'Content-Type': 'application/json' },
+        body:        JSON.stringify(payload),
+      });
+
+      let data = {};
+      const contentType = res.headers.get('Content-Type') ?? '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      }
+
+      return { ok: res.ok, status: res.status, data };
+    }
+
+    // ─── Login Form ──────────────────────────────────────────────
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideNotification();
+
+      const email    = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      if (!email || !password) {
+        showNotification('Please fill in all fields.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('login-btn');
+      setLoading(btn, true);
+
+      try {
+        const { ok, data } = await apiPost('/auth/login', { email, password });
+
+        if (ok) {
+          // 🔥 Save the systemUser flag to localStorage
+          const isAdmin = data.user?.systemUser === true;
+          localStorage.setItem('isAdmin', isAdmin);
+
+          showNotification(data.message ?? 'Login successful! Redirecting…', 'success');
+          setTimeout(() => window.location.href = 'dashboard.html', 1200);
+        } else {
+          showNotification(data.message ?? 'Invalid credentials. Please try again.', 'error');
+        }
+      } catch (err) {
+        showNotification('Network error — is the server running?', 'error');
+        console.error('[Login Error]', err);
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+
+    // ─── Register Form ───────────────────────────────────────────
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideNotification();
+
+      const name     = document.getElementById('reg-name').value.trim();
+      const email    = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const transactionPin = document.getElementById('reg-pin').value.trim();
+
+      if (!name || !email || !password || !transactionPin) {
+        showNotification('Please fill in all fields.', 'error');
+        return;
+      }
+
+      if (password.length < 8) {
+        showNotification('Password must be at least 8 characters.', 'error');
+        return;
+      }
+
+      if (!/^\d{4}$|^\d{6}$/.test(transactionPin)) {
+        showNotification('Security PIN must be exactly 4 or 6 digits.', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('register-btn');
+      setLoading(btn, true);
+
+      try {
+        // 🚀 Add transactionPin to the payload
+        const { ok, data } = await apiPost('/auth/register', { name, email, password, transactionPin });
+
+        if (ok) {
+          showNotification(data.message ?? 'Account created! You can now log in.', 'success');
+          document.getElementById('register-form').reset();
+          setTimeout(() => switchTab('login'), 1800);
+        } else {
+          showNotification(data.message ?? 'Registration failed. Please try again.', 'error');
+        }
+      } catch (err) {
+        showNotification('Network error — is the server running?', 'error');
+        console.error('[Register Error]', err);
+      } finally {
+        setLoading(btn, false);
+      }
+    });
+  </script>
+</body>
+</html>

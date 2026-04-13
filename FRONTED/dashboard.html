@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BankLedger — Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    keyframes: {
+                        fadeIn:    { '0%': { opacity: 0, transform: 'translateY(14px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+                        slideDown: { '0%': { opacity: 0, transform: 'translateY(-10px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+                        fadeInScale: { '0%': { opacity: 0, transform: 'scale(0.95)' }, '100%': { opacity: 1, transform: 'scale(1)' } },
+                        pulse:     { '0%,100%': { opacity: 1 }, '50%': { opacity: .4 } },
+                    },
+                    animation: {
+                        fadeIn:      'fadeIn 0.4s ease forwards',
+                        slideDown:   'slideDown 0.3s ease forwards',
+                        fadeInScale: 'fadeInScale 0.25s ease forwards',
+                        pulse:       'pulse 1.4s ease-in-out infinite',
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        @keyframes fadeIn    { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideDown { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeInScale { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+        @keyframes pulse     { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+        .account-card  { animation: fadeIn 0.4s ease forwards; }
+        .skeleton      { animation: pulse 1.4s ease-in-out infinite; }
+        .modal-content { animation: fadeInScale 0.25s ease forwards; }
+
+        /* Hide scrollbar but keep scroll */
+        .modal-scroll::-webkit-scrollbar { width: 4px; }
+        .modal-scroll::-webkit-scrollbar-track { background: transparent; }
+        .modal-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        /* Custom select arrow */
+        select option { background:#020813; color:#f1f5f9; }
+
+        /* 🚀 NEW: Utility class to hide numbers and fix Chrome Data Breach popup */
+        .mask-pin { -webkit-text-security: disc; }
+    </style>
+</head>
+
+<body class="bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#0a233a] via-[#051320] to-[#020813] text-white min-h-screen bg-fixed bg-cover bg-no-repeat">
+
+    <nav class="sticky top-0 z-50 bg-white/5 backdrop-blur-xl border-b border-white/10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="flex items-center justify-center w-9 h-9 rounded-xl bg-blue-600 shadow">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 10v11M12 10v11M16 10v11" />
+                    </svg>
+                </div>
+                <span class="text-lg font-bold tracking-tight">BankLedger</span>
+                <span id="admin-badge" class="hidden inline-flex items-center gap-1 bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full tracking-wide">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9.504 1.132a1 1 0 01.992 0l1.75 1a1 1 0 11-.992 1.736L10 3.152l-1.254.716a1 1 0 11-.992-1.736l1.75-1zM5.618 4.504a1 1 0 01-.372 1.364L5.016 6A4.992 4.992 0 017 9.95V11a1 1 0 11-2 0v-1a2.994 2.994 0 00-1.184-2.373l-.23-.132a1 1 0 01.372-1.364l-.36-.627zM14.382 4.504a1 1 0 01.372 1.364l-.23.132A2.994 2.994 0 0013 8.627V11a1 1 0 11-2 0V9.95A4.992 4.992 0 0013 6l-.23-.132a1 1 0 01.372-1.364zM10 13a1 1 0 011 1v.01a1 1 0 11-2 0V14a1 1 0 011-1z" clip-rule="evenodd"/>
+                    </svg>
+                    ADMIN PORTAL
+                </span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="greeting" class="hidden sm:block text-sm text-slate-400"></span>
+                
+                <button onclick="openPinModal()" class="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white text-sm font-medium px-4 py-2 rounded-xl transition-all duration-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Change PIN
+                </button>
+
+                <button id="logout-btn" onclick="handleLogout()" class="flex items-center gap-2 bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/40 text-slate-300 hover:text-red-400 text-sm font-medium px-4 py-2 rounded-xl transition-all duration-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-10">
+
+        <div id="notification" role="alert" aria-live="polite" class="hidden mb-6 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2">
+            <svg id="notif-icon" class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"></svg>
+            <span id="notif-text"></span>
+            <button onclick="hideNotification()" class="ml-auto opacity-60 hover:opacity-100 transition" aria-label="Dismiss">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">
+                    Your Accounts <span id="dashboardUserName" class="text-cyan-400 text-xl font-medium hidden"></span>
+                </h1>
+                <p class="text-slate-400 text-sm mt-0.5">Manage your linked bank accounts</p>
+            </div>
+
+            <div class="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+                <button id="audit-ledger-btn" onclick="runLedgerAudit()" class="inline-flex items-center gap-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-sm font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 whitespace-nowrap shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    Run Crypto Audit
+                </button>
+
+                <button onclick="openHistoryModal()" class="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-300 hover:text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    View History
+                </button>
+
+                <button onclick="openTransferModal()" class="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-slate-300 hover:text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    Transfer Money
+                </button>
+
+                <button id="open-account-btn" onclick="handleOpenAccount()" class="inline-flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-[0_0_15px_rgba(8,145,178,0.35)] hover:shadow-[0_0_22px_rgba(8,145,178,0.55)] transition-all duration-200 whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Open New Account
+                </button>
+            </div>
+        </div>
+
+        <div id="accounts-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+        <div id="empty-state" class="hidden flex-col items-center justify-center py-24 text-center">
+            <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+            </div>
+            <p class="text-slate-400 font-medium">No accounts yet</p>
+            <p class="text-slate-600 text-sm mt-1">Click <strong class="text-slate-500">Open New Account</strong> to get started.</p>
+        </div>
+
+        <div id="error-state" class="hidden flex-col items-center justify-center py-24 text-center">
+            <div class="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <p class="text-red-400 font-medium">Failed to load accounts</p>
+            <p class="text-slate-500 text-sm mt-1" id="error-detail">Please check your connection and try again.</p>
+            <button onclick="fetchAccounts()" class="mt-4 text-sm text-blue-400 hover:text-blue-300 transition font-medium">Retry</button>
+        </div>
+
+    </main>
+
+    <div id="transfer-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div id="modal-backdrop" onclick="closeTransferModal()" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+        <div class="modal-content relative w-full max-w-md bg-[#01040a]/80 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-cyan-900/20 p-8 modal-scroll overflow-y-auto max-h-[90vh]">
+            <div class="flex items-center justify-between mb-7">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-cyan-600/20 border border-cyan-500/30">
+                        <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 id="modal-title" class="text-lg font-bold leading-tight">Transfer Money</h2>
+                        <p class="text-slate-400 text-xs mt-0.5">Send funds between accounts</p>
+                    </div>
+                </div>
+                <button onclick="closeTransferModal()" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition" aria-label="Close modal">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div id="modal-notification" class="hidden mb-5 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2">
+                <svg id="modal-notif-icon" class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"></svg>
+                <span id="modal-notif-text"></span>
+            </div>
+            <form id="transfer-form" novalidate>
+                <div class="space-y-5">
+                    <div>
+                        <label for="transfer-from" class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">From Account</label>
+                        <select id="transfer-from" required class="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition appearance-none cursor-pointer">
+                            <option value="" disabled selected class="text-slate-500">Select your account…</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="transfer-to-email" class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Recipient Email</label>
+                        <input id="transfer-to-email" type="email" required placeholder="recipient@example.com" class="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition" />
+                        <p id="recipient-name-hint" class="hidden mt-1.5 text-xs text-emerald-400 font-medium"></p>
+                    </div>
+                    <div>
+                        <label for="transfer-amount" class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">Amount</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-4 flex items-center text-slate-500 text-sm font-medium pointer-events-none">₹</span>
+                            <input id="transfer-amount" type="number" min="1" step="0.01" required placeholder="0.00" class="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl pl-8 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition" />
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="transfer-pin" class="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                            Security PIN (4 or 6 Digits)
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-4 flex items-center text-slate-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                            </span>
+                            <input id="transfer-pin" type="text" inputmode="numeric" maxlength="6" required placeholder="••••" autocomplete="off"
+                                class="mask-pin w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl pl-10 pr-12 py-3 text-lg tracking-[0.5em] font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition" />
+                            <button type="button" onclick="togglePin('transfer-pin')" class="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-white transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 pt-1">
+                        <button type="button" onclick="closeTransferModal()" class="flex-1 py-3 rounded-xl border border-white/10 text-slate-400 hover:text-white hover:border-white/20 text-sm font-semibold transition-all duration-200">Cancel</button>
+                        <button type="submit" id="transfer-submit-btn" class="flex-1 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white font-bold py-3 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(8,145,178,0.35)] hover:shadow-[0_0_22px_rgba(8,145,178,0.55)] text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                            <span>Send Transfer</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="change-pin-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closePinModal()"></div>
+        <div class="modal-content relative w-full max-w-sm bg-[#01040a]/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-8 shadow-2xl">
+            <h2 class="text-lg font-bold mb-1">Update Security PIN</h2>
+            <p class="text-xs text-slate-400 mb-5">Create a 4 or 6 digit PIN.</p>
+            <form id="change-pin-form">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">Current PIN</label>
+                        <div class="relative">
+                            <input id="current-pin" type="text" inputmode="numeric" maxlength="6" required class="mask-pin w-full bg-white/5 border border-white/10 text-white rounded-xl pl-4 pr-12 py-2.5 tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                            <button type="button" onclick="togglePin('current-pin')" class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-white"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">New PIN</label>
+                        <div class="relative">
+                            <input id="new-pin" type="text" inputmode="numeric" maxlength="6" required class="mask-pin w-full bg-white/5 border border-white/10 text-white rounded-xl pl-4 pr-12 py-2.5 tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                            <button type="button" onclick="togglePin('new-pin')" class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-white"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></button>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" onclick="closePinModal()" class="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-400 hover:text-white transition">Cancel</button>
+                        <button type="submit" id="pin-submit-btn" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 rounded-xl transition shadow-[0_0_15px_rgba(8,145,178,0.35)] hover:shadow-[0_0_22px_rgba(8,145,178,0.55)]">Save PIN</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="history-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="history-modal-title">
+        <div onclick="closeHistoryModal()" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"></div>
+        <div class="modal-content relative w-full max-w-4xl bg-[#01040a]/80 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl shadow-cyan-900/20 flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between px-8 pt-8 pb-6 border-b border-white/10 flex-shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-violet-600/20 border border-violet-500/30">
+                        <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 id="history-modal-title" class="text-lg font-bold leading-tight">Ledger Explorer (History)</h2>
+                        <p class="text-slate-400 text-xs mt-0.5">Blockchain transaction logs</p>
+                    </div>
+                </div>
+                <button onclick="closeHistoryModal()" class="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition" aria-label="Close modal">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div id="history-body" class="overflow-y-auto modal-scroll flex-1 px-8 py-6"></div>
+        </div>
+    </div>
+
+    <div id="custom-prompt-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"></div>
+        <div class="relative w-full max-w-sm bg-[#01040a]/90 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl p-6 transform transition-all scale-95 opacity-0" id="custom-prompt-panel">
+            <div class="mb-5">
+                <h3 id="custom-prompt-title" class="text-lg font-bold text-white mb-1"></h3>
+                <p id="custom-prompt-message" class="text-sm text-slate-400"></p>
+            </div>
+            <div class="relative mb-6">
+                <span class="absolute inset-y-0 left-4 flex items-center text-slate-500 font-medium">₹</span>
+                <input id="custom-prompt-input" type="number" min="1" step="0.01" class="w-full bg-white/5 border border-white/10 text-white rounded-xl pl-8 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-cyan-500 transition" />
+            </div>
+            <div class="flex gap-3">
+                <button id="custom-prompt-cancel" class="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-300 hover:text-white hover:bg-white/5 font-semibold transition">Cancel</button>
+                <button id="custom-prompt-confirm" class="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold shadow-lg shadow-cyan-900/20 transition">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-alert-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"></div>
+        <div class="relative w-full max-w-sm bg-[#01040a]/90 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl p-6 transform transition-all scale-95 opacity-0" id="custom-alert-panel">
+            <div class="flex flex-col items-center text-center">
+                <div id="custom-alert-icon-container" class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4">
+                    <svg id="custom-alert-icon" class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"></svg>
+                </div>
+                <h3 id="custom-alert-title" class="text-xl font-bold text-white mb-2"></h3>
+                <div id="custom-alert-message" class="text-sm text-slate-400 mb-6 whitespace-pre-wrap leading-relaxed text-left w-full bg-white/5 p-4 rounded-xl border border-white/5"></div>
+                <button id="custom-alert-btn" class="w-full py-3 rounded-xl font-bold transition-all duration-200">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+
+        if (isAdmin) {
+            document.getElementById('admin-badge').classList.remove('hidden');
+        }
+
+        let cachedAccounts = [];
+
+        // 🚀 SHOW / HIDE PIN TOGGLE LOGIC
+        function togglePin(inputId) {
+            const input = document.getElementById(inputId);
+            input.classList.toggle('mask-pin');
+        }
+
+        // 🚀 CHANGE PIN MODAL LOGIC
+        function openPinModal() {
+            document.getElementById('change-pin-form').reset();
+            document.getElementById('change-pin-modal').classList.remove('hidden');
+        }
+        function closePinModal() {
+            document.getElementById('change-pin-modal').classList.add('hidden');
+        }
+
+        document.getElementById('change-pin-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const currentPin = document.getElementById('current-pin').value.trim();
+            const newPin = document.getElementById('new-pin').value.trim();
+
+            if (!/^\d{4}$|^\d{6}$/.test(newPin)) {
+                uiAlert('Error', 'New PIN must be exactly 4 or 6 digits.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('pin-submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const res = await fetch(`${API_BASE}/transactions/update-pin`, {
+                    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ currentPin, newPin }),
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    closePinModal();
+                    uiAlert('Success', data.message, 'success');
+                } else {
+                    uiAlert('Error', data.message, 'error');
+                }
+            } catch (err) {
+                uiAlert('Error', 'Network connection failed.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save PIN';
+            }
+        });
+
+        // ALERTS & PROMPTS
+        function uiPrompt(title, message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('custom-prompt-modal');
+                const panel = document.getElementById('custom-prompt-panel');
+                const inputEl = document.getElementById('custom-prompt-input');
+                const cancelBtn = document.getElementById('custom-prompt-cancel');
+                const confirmBtn = document.getElementById('custom-prompt-confirm');
+
+                document.getElementById('custom-prompt-title').textContent = title;
+                document.getElementById('custom-prompt-message').textContent = message;
+                inputEl.value = '';
+
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    panel.classList.remove('scale-95', 'opacity-0');
+                    panel.classList.add('scale-100', 'opacity-100');
+                    inputEl.focus();
+                }, 10);
+
+                const close = (value) => {
+                    panel.classList.remove('scale-100', 'opacity-100');
+                    panel.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => { modal.classList.add('hidden'); resolve(value); }, 200);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    confirmBtn.removeEventListener('click', onConfirm);
+                };
+
+                const onCancel = () => close(null);
+                const onConfirm = () => close(inputEl.value);
+
+                cancelBtn.addEventListener('click', onCancel);
+                confirmBtn.addEventListener('click', onConfirm);
+            });
+        }
+
+        function uiAlert(title, message, type = 'info') {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('custom-alert-modal');
+                const panel = document.getElementById('custom-alert-panel');
+                const iconContainer = document.getElementById('custom-alert-icon-container');
+                const icon = document.getElementById('custom-alert-icon');
+                const btn = document.getElementById('custom-alert-btn');
+
+                iconContainer.className = 'w-16 h-16 rounded-2xl flex items-center justify-center mb-4';
+                btn.className = 'w-full py-3 rounded-xl font-bold transition-all duration-200 shadow-lg';
+
+                if (type === 'success') {
+                    iconContainer.classList.add('bg-emerald-500/10', 'border', 'border-emerald-500/20');
+                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />';
+                    icon.classList.add('text-emerald-400');
+                    btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500', 'text-white', 'shadow-emerald-900/20');
+                } else if (type === 'error') {
+                    iconContainer.classList.add('bg-red-500/10', 'border', 'border-red-500/20');
+                    icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />';
+                    icon.classList.add('text-red-400');
+                    btn.classList.add('bg-red-600', 'hover:bg-red-500', 'text-white', 'shadow-red-900/20');
+                }
+
+                document.getElementById('custom-alert-title').textContent = title;
+                document.getElementById('custom-alert-message').textContent = message;
+
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    panel.classList.remove('scale-95', 'opacity-0');
+                    panel.classList.add('scale-100', 'opacity-100');
+                }, 10);
+
+                const close = () => {
+                    panel.classList.remove('scale-100', 'opacity-100');
+                    panel.classList.add('scale-95', 'opacity-0');
+                    setTimeout(() => { modal.classList.add('hidden'); resolve(); }, 200);
+                    btn.removeEventListener('click', close);
+                };
+
+                btn.addEventListener('click', close);
+            });
+        }
+
+        const ICONS = {
+            success: `<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>`,
+            error:   `<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>`,
+            info:    `<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 4a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>`,
+        };
+
+        const COLOR_MAP = {
+            success: 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400',
+            error:   'bg-red-500/15 border border-red-500/30 text-red-400',
+            info:    'bg-blue-500/15 border border-blue-500/30 text-blue-400',
+        };
+
+        function showNotification(message, type = 'error') { _applyNotification('notification', 'notif-icon', 'notif-text', message, type); }
+        function hideNotification() { document.getElementById('notification').classList.add('hidden'); }
+        function showModalNotification(message, type = 'error') { _applyNotification('modal-notification', 'modal-notif-icon', 'modal-notif-text', message, type); }
+        function hideModalNotification() { document.getElementById('modal-notification').classList.add('hidden'); }
+
+        function _applyNotification(elId, iconId, textId, message, type) {
+            const el   = document.getElementById(elId);
+            const icon = document.getElementById(iconId);
+            const text = document.getElementById(textId);
+            text.textContent = message;
+            icon.innerHTML   = ICONS[type] ?? ICONS.error;
+            el.className = `mb-5 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2 ${COLOR_MAP[type] ?? COLOR_MAP.error}`;
+            el.classList.remove('hidden');
+        }
+
+        async function handleLogout() {
+            const btn = document.getElementById('logout-btn');
+            btn.disabled    = true;
+            btn.textContent = 'Logging out…';
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+                if (res.ok) {
+                    localStorage.removeItem('isAdmin');
+                    window.location.href = 'index.html';
+                } else {
+                    showNotification('Logout failed. Please try again.', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>Logout`;
+                }
+            } catch {
+                showNotification('Network error. Please try again.', 'error');
+                btn.disabled = false;
+            }
+        }
+
+        async function handleOpenAccount() {
+            const btn = document.getElementById('open-account-btn');
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Opening…`;
+            hideNotification();
+
+            try {
+                const res  = await fetch(`${API_BASE}/accounts/`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' } });
+                let data = {};
+                if (res.headers.get('Content-Type')?.includes('application/json')) data = await res.json();
+
+                if (res.ok) {
+                    showNotification(data.message ?? 'New account opened successfully!', 'success');
+                    await fetchAccounts();
+                } else {
+                    showNotification(data.message ?? 'Failed to open account. Try again.', 'error');
+                }
+            } catch {
+                showNotification('Network error — is the server running?', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg> Open New Account`;
+            }
+        }
+
+        async function handleAddFunds(accountId, btn) {
+            const rawAmount = await uiPrompt('Add Funds', 'Enter the amount to add to this account (₹):');
+            if (rawAmount === null) return; 
+
+            const amount = Number(rawAmount);
+            if (!amount || amount <= 0 || isNaN(amount)) {
+                showNotification('Please enter a valid positive amount.', 'error');
+                return;
+            }
+
+            const idempotencyKey = crypto.randomUUID();
+            btn.disabled = true;
+            btn.textContent = 'Adding…';
+
+            try {
+                const res = await fetch(`${API_BASE}/transactions/system/initial-funds`, {
+                    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ toAccount: accountId, amount, idempotencyKey }),
+                });
+
+                let data = {};
+                if (res.headers.get('Content-Type')?.includes('application/json')) data = await res.json();
+
+                if (res.ok) {
+                    showNotification(data.message ?? `₹${amount.toLocaleString('en-IN')} added successfully!`, 'success');
+                    await fetchAccounts();
+                } else {
+                    showNotification(data.message ?? 'Failed to add funds. Try again.', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Add Funds';
+                }
+            } catch {
+                showNotification('Network error — is the server running?', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Add Funds';
+            }
+        }
+
+        function openTransferModal() {
+            hideModalNotification();
+            document.getElementById('transfer-form').reset();
+            const hint = document.getElementById('recipient-name-hint');
+            hint.textContent = '';
+            hint.classList.add('hidden');
+            populateFromDropdown();
+
+            const modal = document.getElementById('transfer-modal');
+            modal.classList.remove('hidden');
+            const panel = modal.querySelector('.modal-content');
+            panel.style.animation = 'none';
+            panel.offsetHeight;
+            panel.style.animation = '';
+            document.addEventListener('keydown', handleModalKey);
+        }
+
+        function closeTransferModal() {
+            document.getElementById('transfer-modal').classList.add('hidden');
+            document.removeEventListener('keydown', handleModalKey);
+        }
+
+        function handleModalKey(e) { if (e.key === 'Escape') closeTransferModal(); }
+
+        function populateFromDropdown() {
+            const sel = document.getElementById('transfer-from');
+            sel.innerHTML = '<option value="" disabled selected>Select your account…</option>';
+            cachedAccounts.forEach(acc => {
+                const id  = acc._id ?? acc.id ?? '';
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = `···${String(id).slice(-10).toUpperCase()}  (${acc.currency ?? 'INR'})`;
+                sel.appendChild(opt);
+            });
+        }
+
+        document.getElementById('transfer-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideModalNotification();
+
+            const fromAccount  = document.getElementById('transfer-from').value.trim();
+            const recipientEmail = document.getElementById('transfer-to-email').value.trim();
+            const amount       = Number(document.getElementById('transfer-amount').value);
+            const pin          = document.getElementById('transfer-pin').value.trim();
+            const nameHint     = document.getElementById('recipient-name-hint');
+
+            if (!fromAccount)    { showModalNotification('Please select a source account.', 'error'); return; }
+            if (!recipientEmail) { showModalNotification('Please enter the recipient email.', 'error'); return; }
+            if (!amount || amount <= 0) { showModalNotification('Please enter a valid amount.', 'error'); return; }
+            
+            // 🚀 UPDATED: Check for 4 OR 6 digits
+            if (!pin || (pin.length !== 4 && pin.length !== 6)) { showModalNotification('Please enter a valid 4 or 6-digit PIN.', 'error'); return; }
+
+            const submitBtn = document.getElementById('transfer-submit-btn');
+            submitBtn.disabled = true;
+            nameHint.classList.add('hidden');
+
+            submitBtn.querySelector('span').textContent = 'Verifying user…';
+
+            let toAccount;
+            try {
+                const lookupRes = await fetch(`${API_BASE}/accounts/lookup`, {
+                    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: recipientEmail }),
+                });
+
+                let lookupData = {};
+                if (lookupRes.headers.get('Content-Type')?.includes('application/json')) lookupData = await lookupRes.json();
+
+                if (!lookupRes.ok) {
+                    showModalNotification(lookupData.message ?? 'No active account found for this email.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.querySelector('span').textContent = 'Send Transfer';
+                    return;
+                }
+
+                toAccount = lookupData.accountId;
+
+                if (lookupData.name) {
+                    nameHint.textContent = `✓ Sending to ${lookupData.name}`;
+                    nameHint.classList.remove('hidden');
+                }
+
+                if (fromAccount === toAccount) {
+                    showModalNotification('You cannot transfer to your own account.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.querySelector('span').textContent = 'Send Transfer';
+                    return;
+                }
+
+            } catch {
+                showModalNotification('Network error during lookup.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.querySelector('span').textContent = 'Send Transfer';
+                return;
+            }
+
+            submitBtn.querySelector('span').textContent = 'Sending…';
+            const idempotencyKey = crypto.randomUUID();
+
+            try {
+                const res = await fetch(`${API_BASE}/transactions/`, {
+                    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fromAccount, toAccount: recipientEmail, amount, idempotencyKey, pin }),
+                });
+
+                let data = {};
+                if (res.headers.get('Content-Type')?.includes('application/json')) data = await res.json();
+
+                if (res.ok) {
+                    closeTransferModal();
+                    showNotification(data.message ?? `Transfer of ₹${amount.toLocaleString('en-IN')} successful!`, 'success');
+                    await fetchAccounts();
+                } else {
+                    showModalNotification(data.message ?? 'Transfer failed. Please try again.', 'error');
+                }
+            } catch {
+                showModalNotification('Network error — is the server running?', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.querySelector('span').textContent = 'Send Transfer';
+            }
+        });
+
+        async function fetchAccounts() {
+            showSkeletons();
+            try {
+                const res = await fetch(`${API_BASE}/accounts/`, { method: 'GET', credentials: 'include' });
+                if (res.status === 401) { window.location.href = 'index.html'; return; }
+                let data = {};
+                if (res.headers.get('Content-Type')?.includes('application/json')) data = await res.json();
+                if (!res.ok) throw new Error(data.message ?? 'Server error');
+
+                if (data.userName) {
+                    const nameSpan = document.getElementById('dashboardUserName');
+                    nameSpan.innerText = ` ~ ${data.userName}`;
+                    nameSpan.classList.remove('hidden');
+                }
+
+                const accounts = Array.isArray(data) ? data : (data.accounts ?? data.data ?? []);
+                cachedAccounts = accounts;
+                renderAccounts(accounts);
+            } catch (err) {
+                showErrorState(err.message);
+            }
+        }
+
+        function showSkeletons() {
+            const grid = document.getElementById('accounts-grid');
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('error-state').classList.add('hidden');
+            grid.innerHTML = Array.from({ length: 3 }).map(() => `<div class="skeleton bg-white/5 border border-white/10 rounded-2xl p-6 h-52"></div>`).join('');
+        }
+
+        function showErrorState(detail) {
+            document.getElementById('accounts-grid').innerHTML = '';
+            document.getElementById('empty-state').classList.add('hidden');
+            const errEl = document.getElementById('error-state');
+            errEl.classList.remove('hidden');
+            errEl.classList.add('flex');
+            if (detail) document.getElementById('error-detail').textContent = detail;
+        }
+
+        function renderAccounts(accounts) {
+            const grid = document.getElementById('accounts-grid');
+            const emptyEl = document.getElementById('empty-state');
+            const errEl = document.getElementById('error-state');
+
+            grid.innerHTML = '';
+            errEl.classList.add('hidden');
+
+            const visibleAccounts = isAdmin ? accounts : accounts.filter(acc => (acc.balance ?? 0) >= 0);
+
+            if (!visibleAccounts.length) {
+                emptyEl.classList.remove('hidden');
+                emptyEl.classList.add('flex');
+                return;
+            }
+            emptyEl.classList.add('hidden');
+
+            visibleAccounts.forEach((account, i) => {
+                const card = document.createElement('div');
+                const accountId = account._id ?? account.id ?? '';
+                const currency  = account.currency ?? 'INR';
+                const status    = account.status   ?? 'unknown';
+                const shortId   = String(accountId).slice(-8).toUpperCase();
+
+                const statusColor = status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+
+                card.className = 'account-card bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 flex flex-col gap-4 hover:bg-white/[0.08] transition-all duration-200';
+                card.style.animationDelay = `${i * 60}ms`;
+                card.style.opacity = '0';
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-cyan-600/20 border border-cyan-500/30">
+                            <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                        </div>
+                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${statusColor}">
+                            <span class="w-1.5 h-1.5 rounded-full ${status === 'active' ? 'bg-emerald-400' : 'bg-slate-400'}"></span>${capitalise(status)}
+                        </span>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 uppercase tracking-wider font-medium mb-0.5">Account ID</p>
+                        <p class="text-sm font-mono font-semibold text-slate-200 truncate" title="${accountId}">···${shortId}</p>
+                    </div>
+                    <div class="flex items-end justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 uppercase tracking-wider font-medium mb-0.5">Currency</p>
+                            <p class="text-sm font-bold text-white">${currency}</p>
+                        </div>
+                        <div id="balance-area-${accountId}" class="text-right">
+                            <button onclick="fetchBalance('${accountId}', this)" class="check-balance-btn inline-flex items-center gap-1.5 bg-cyan-600/20 hover:bg-cyan-600/40 border border-cyan-500/30 text-cyan-400 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-200">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                Check Balance
+                            </button>
+                        </div>
+                    </div>
+                    ${isAdmin ? `
+                    <div class="pt-1 border-t border-white/5">
+                        <button onclick="handleAddFunds('${accountId}', this)" class="w-full inline-flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-400 hover:text-emerald-300 text-xs font-semibold px-3 py-2 rounded-lg transition-all duration-200">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                            Add Funds
+                        </button>
+                    </div>` : ''}
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function fetchBalance(accountId, btn) {
+            btn.disabled = true;
+            btn.textContent = 'Loading…';
+            try {
+                const res = await fetch(`${API_BASE}/accounts/balance/${accountId}`, { method: 'GET', credentials: 'include' });
+                let data = {};
+                if (res.headers.get('Content-Type')?.includes('application/json')) data = await res.json();
+                if (!res.ok) throw new Error(data.message ?? 'Failed to fetch balance');
+
+                const balance  = data.balance  ?? data.data?.balance ?? data.amount ?? '—';
+                const currency = data.currency ?? '';
+
+                const area = document.getElementById(`balance-area-${accountId}`);
+                if (area) {
+                    area.innerHTML = `<p class="text-xs text-slate-500 uppercase tracking-wider font-medium mb-0.5">Balance</p><p class="text-lg font-bold text-emerald-400">${formatCurrency(balance, currency)}</p>`;
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = 'Retry';
+                showNotification(err.message, 'error');
+            }
+        }
+
+        function capitalise(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
+        function formatCurrency(amount, currency) {
+            if (typeof amount !== 'number' && isNaN(Number(amount))) return String(amount);
+            try { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: currency || 'INR', minimumFractionDigits: 2 }).format(Number(amount)); } catch { return `${currency} ${amount}`; }
+        }
+
+        async function runLedgerAudit() {
+            const btn = document.getElementById('audit-ledger-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Verifying...`;
+            
+            try {
+                const res = await fetch(`${API_BASE}/transactions/audit`, { method: 'GET', credentials: 'include' });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    await uiAlert('Blockchain Verified', `Status: ${data.status}\nBlocks Verified: ${data.totalBlocksVerified}\nMessage: ${data.message}`, 'success');
+                } else {
+                    console.error("TAMPERING DATA:", data.brokenLinks);
+                    await uiAlert('Security Breach Detected!', `Status: ${data.status}\nMessage: ${data.message}\n\nCheck the browser console (F12) for the exact tampered Block IDs!`, 'error');
+                }
+            } catch (err) {
+                await uiAlert('Connection Error', "Failed to connect to the audit server.", 'error');
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+
+        function openHistoryModal() {
+            const modal = document.getElementById('history-modal');
+            modal.classList.remove('hidden');
+            const panel = modal.querySelector('.modal-content');
+            panel.style.animation = 'none';
+            panel.offsetHeight;
+            panel.style.animation = '';
+            document.addEventListener('keydown', handleHistoryKey);
+            fetchTransactionHistory();
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('history-modal').classList.add('hidden');
+            document.removeEventListener('keydown', handleHistoryKey);
+        }
+
+        function handleHistoryKey(e) { if (e.key === 'Escape') closeHistoryModal(); }
+
+        async function fetchTransactionHistory() {
+            const body = document.getElementById('history-body');
+            body.innerHTML = `<div class="space-y-3">${Array.from({ length: 4 }).map(() => `<div class="skeleton bg-white/5 border border-white/10 rounded-xl h-14"></div>`).join('')}</div>`;
+            try {
+                const res = await fetch(`${API_BASE}/transactions/history`, { method: 'GET', credentials: 'include' });
+                if (res.status === 401) { window.location.href = 'index.html'; return; }
+                let data = {};
+                if (res.headers.get('Content-Type')?.includes('application/json')) data = await res.json();
+                if (!res.ok) throw new Error(data.message ?? 'Failed to fetch history');
+                renderTransactionHistory(data.transactions ?? [], data.myAccountIds ?? []);
+            } catch (err) {
+                body.innerHTML = `<div class="flex flex-col items-center justify-center py-16 text-center"><div class="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mb-3"><svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><p class="text-red-400 font-medium text-sm">${err.message}</p><button onclick="fetchTransactionHistory()" class="mt-3 text-xs text-blue-400 hover:text-blue-300 font-medium transition">Retry</button></div>`;
+            }
+        }
+
+        function renderTransactionHistory(transactions, myAccountIds) {
+            const body = document.getElementById('history-body');
+            if (!transactions.length) {
+                body.innerHTML = `<div class="flex flex-col items-center justify-center py-16 text-center"><div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-3"><svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg></div><p class="text-slate-400 font-medium text-sm">No transactions yet</p></div>`;
+                return;
+            }
+
+            const myIds = myAccountIds.map(id => String(id));
+            const rows = transactions.map(tx => {
+                const fromId = String(tx.fromAccount?._id ?? '');
+                const toId   = String(tx.toAccount?._id ?? '');
+                const isSender   = myIds.includes(fromId);
+                const isReceiver = myIds.includes(toId);
+                const isInternal = isSender && isReceiver;
+
+                let typeLabel, amountStr, amountClass, detailStr, statusDotClass;
+                if (isInternal) {
+                    typeLabel = 'Internal'; amountStr = `₹${Number(tx.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`; amountClass = 'text-slate-300 font-semibold'; detailStr = `Internal Transfer (•••${toId.slice(-4).toUpperCase()})`; statusDotClass = 'bg-slate-400';
+                } else if (isSender) {
+                    typeLabel = 'Debit'; amountStr = `-₹${Number(tx.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`; amountClass = 'text-red-400 font-semibold'; const toEmail = tx.toAccount?.user?.email ?? 'Unknown'; detailStr = `Sent to: ${toEmail} (•••${toId.slice(-4).toUpperCase()})`; statusDotClass = 'bg-red-400';
+                } else {
+                    typeLabel = 'Credit'; amountStr = `+₹${Number(tx.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`; amountClass = 'text-emerald-400 font-semibold'; const fromEmail = tx.fromAccount?.user?.email ?? 'Unknown'; detailStr = `Received from: ${fromEmail} (•••${fromId.slice(-4).toUpperCase()})`; statusDotClass = 'bg-emerald-400';
+                }
+
+                const dateStr = tx.createdAt ? new Date(tx.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+                const txStatus  = tx.status ?? 'completed';
+                const statusColors = { completed: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', pending: 'bg-amber-500/15 text-amber-400 border-amber-500/30', failed: 'bg-red-500/15 text-red-400 border-red-500/30' };
+                const statusClass = statusColors[txStatus] ?? statusColors.completed;
+                const rawHash = tx.signature || tx._id;
+                const displayHash = `0x${String(rawHash).slice(0, 8).toLowerCase()}...`;
+
+                return `<tr class="border-b border-white/5 hover:bg-white/[0.03] transition-colors">
+                        <td class="py-3.5 pr-4 text-xs text-slate-400 whitespace-nowrap">${dateStr}</td>
+                        <td class="py-3.5 pr-4 text-xs font-mono text-amber-400 whitespace-nowrap" title="${rawHash}">${displayHash}</td>
+                        <td class="py-3.5 pr-4 text-xs text-slate-300 max-w-[220px] truncate" title="${detailStr}">${detailStr}</td>
+                        <td class="py-3.5 pr-4 text-sm ${amountClass} whitespace-nowrap tabular-nums">${amountStr}</td>
+                        <td class="py-3.5"><span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${statusClass}"><span class="w-1.5 h-1.5 rounded-full ${statusDotClass}"></span>${capitalise(txStatus)}</span></td>
+                    </tr>`;
+            }).join('');
+
+            body.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left border-collapse"><thead><tr class="border-b border-white/10"><th class="pb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider pr-4">Date</th><th class="pb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider pr-4">Signature</th><th class="pb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider pr-4">Details</th><th class="pb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider pr-4">Amount</th><th class="pb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { fetchAccounts(); });
+    </script>
+</body>
+</html>
