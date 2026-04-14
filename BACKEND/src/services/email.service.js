@@ -19,6 +19,7 @@
 //     console.log('Email server is ready to send messages');
 //   }
 // });
+//...................................................................................
 require('dotenv').config(); // 👈 Guarantee env variables load first!
 const nodemailer = require('nodemailer');
 
@@ -40,6 +41,8 @@ transporter.verify((error, success) => {
 });
 
 // ... keep the rest of your sendEmail functions exactly as they are ...
+
+
 // Function to send email
 const sendEmail = async (to, subject, text, html) => {
   try {
