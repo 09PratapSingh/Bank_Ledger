@@ -1,28 +1,29 @@
-// const nodemailer = require('nodemailer');
-
-// const transporter = nodemailer.createTransport({
-//   service: 'gmail',
-//   auth: {
-//     type: 'OAuth2',
-//     user: process.env.EMAIL_USER,
-//     clientId: process.env.CLIENT_ID,
-//     clientSecret: process.env.CLIENT_SECRET,
-//     refreshToken: process.env.REFRESH_TOKEN,
-//   },
-// });
-
-// // Verify the connection configuration
-// transporter.verify((error, success) => {
-//   if (error) {
-//     console.error('Error connecting to email server:', error);
-//   } else {
-//     console.log('Email server is ready to send messages');
-//   }
-// });
-//...................................................................................
-require('dotenv').config(); // 👈 Guarantee env variables load first!
+require('dotenv').config(); 
 const nodemailer = require('nodemailer');
 
+
+/* const transporter = nodemailer.createTransport({
+   service: 'gmail',
+   auth: {
+     type: 'OAuth2',
+     user: process.env.EMAIL_USER,
+     clientId: process.env.CLIENT_ID,
+     clientSecret: process.env.CLIENT_SECRET,
+     refreshToken: process.env.REFRESH_TOKEN,
+   },
+ });
+
+ Verify the connection configuration
+ transporter.verify((error, success) => {
+   if (error) {
+     console.error('Error connecting to email server:', error);
+   } else {
+     console.log('Email server is ready to send messages');
+   }
+ });
+*/
+
+/*
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -30,6 +31,21 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_APP_PASSWORD, // 👈 Using the App Password instead of OAuth
   },
 });
+*/
+
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587, 
+  secure: false, 
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_APP_PASSWORD,
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+
 
 // Verify the connection configuration
 transporter.verify((error, success) => {
