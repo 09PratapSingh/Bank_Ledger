@@ -46,17 +46,25 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-
 // Verify the connection configuration
 transporter.verify((error, success) => {
   if (error) {
     console.error('Error connecting to email server:', error);
   } else {
-    console.log('✅ Email server is ready to send messages');
+    console.log('Email server is ready to send messages');
   }
 });
 
-// ... keep the rest of your sendEmail functions exactly as they are ...
+/* Verify the connection configuration
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('Error connecting to email server:', error);
+  } else {
+    console.log('Email server is ready to send messages');
+  }
+});
+*/
+
 
 
 // Function to send email
@@ -118,7 +126,6 @@ async function sendReceiverEmail(receiverEmail, receiverName, amount, fromAccoun
   await sendEmail(receiverEmail, subject, text, html);
 }
 
-// 🚀 NEW: Low Balance Alert Email
 // 🚀 NEW: Low Balance Alert Email Function
 async function sendLowBalanceAlert(email, name, balance) {
   try {
