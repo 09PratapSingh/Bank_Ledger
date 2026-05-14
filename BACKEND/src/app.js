@@ -10,7 +10,7 @@ const allowedOrigins = [
   'http://127.0.0.1:5500', 
   'http://localhost:5500',
   'https://bank-ledger-frontend-three.vercel.app',
-  'https://quiet-palmier-0ab8d7.netlify.app' // NO slash at the end!
+  'https://bank-ledger.netlify.app' // NO slash at the end!
 ];
 
 app.use(cors({
