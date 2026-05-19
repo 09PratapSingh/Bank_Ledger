@@ -142,17 +142,18 @@ async function createTransaction(req, res) {
         // 📧 Email notifications
         // Awaits ensure the server doesn't close the connection before Google sends the email.
         // We use 'user' and 'recipientUser' to guarantee the variables exist.
-        try {
-            await emailService.sendTransactionEmail(user.email, user.name, Number(amount), realToAccountId);
+        // 📧 Email notifications (FIRE AND FORGET)
+        emailService.sendTransactionEmail(user.email, user.name, Number(amount), realToAccountId).catch(emailError => {
+            console.warn("⚠️ Sender email failed in background:", emailError.message);
+        });
 
-            if (recipientUser.email) {
-                await emailService.sendReceiverEmail(recipientUser.email, recipientUser.name, Number(amount), fromAccount);
-            }
-        } catch (emailError) {
-            console.warn("⚠️ Email block failed.", emailError.message);
+        if (recipientUser.email) {
+            emailService.sendReceiverEmail(recipientUser.email, recipientUser.name, Number(amount), fromAccount).catch(emailError => {
+                console.warn("⚠️ Receiver email failed in background:", emailError.message);
+            });
         }
 
-        // 🔔 Low Balance Alert
+        // 🔔 Low Balance Alert (FIRE AND FORGET)
         try {
             const LOW_BALANCE_LIMIT = 250;
             const postLedger = await ledgerModel.find({ account: fromAccount });
@@ -161,10 +162,12 @@ async function createTransaction(req, res) {
             }, 0);
 
             if (newBalance <= LOW_BALANCE_LIMIT) {
-                await emailService.sendLowBalanceAlert(user.email, user.name, newBalance);
+                emailService.sendLowBalanceAlert(user.email, user.name, newBalance).catch(balanceErr => {
+                    console.error("⚠️ Low balance email failed in background:", balanceErr.message);
+                });
             }
         } catch (balanceErr) {
-            console.error("Non-critical: Failed to send low balance alert", balanceErr);
+            console.error("Non-critical: Failed to calculate low balance", balanceErr);
         }
 
         return res.status(201).json({ message: "Success", transaction });
